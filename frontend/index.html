@@ -1,0 +1,140 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Clientes Inadimplentes</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"> 
+    </head>
+    <body>
+        <div class="container">
+            <h1>Clientes Inadimplentes</h1>
+            <hr>
+            <div>
+                <input name="id" type="hidden" />
+                <div class="row">
+                    <div class="col">
+                        <label for="Name">Nome cliente</label>
+                        <input class="form-control" name="name" placeholder="Digite o nome"/>
+                    </div>
+                    <div class="col">
+                        <label for="Amount">Valor inadimplencia</label>
+                        <input class="form-control" name="amount" placeholder="R$ 0,00"/>
+                    </div>
+                    <div class="col">
+                        <label for="Date">Data inadimplencia</label>
+                        <input type="date" class="form-control" name="date" />
+                    </div>
+                </div>
+                <br>
+                <button class="btn btn-success" save>Salvar</button>
+
+                <hr>
+                <div class="row">
+                    <div class="col">
+                        <label for="Search">Buscar Cliente </label>
+                        <input class="form-control" name="search" />
+                    </div>
+                </div>
+                <br>
+                <button class="btn btn-primary" search>Buscar</button>
+
+            </div>
+            <br>
+            <table class="table table-bordered" id="clients">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Valor</th>
+                        <th>Desde</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="clientRows"></tbody>
+            </table>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+        <script>
+            const API = 'http://localhost:3000'
+
+            const createButton = (label, type) => {
+                return $('<button>').addClass(`btn btn-${type}`).html(label)
+            }
+
+            const renderRows = clients => {
+                const rows = clients.map(client => {
+                    const updateButton = createButton('Atualizar', 'warning')
+                    updateButton.click(() => loadClient(client))
+
+                    const removeButton = createButton('Excluir', 'danger')
+                    removeButton.click(() => removeClient(client))
+
+                    return $('<tr>')
+                        .append($('<td>').append(client.name))
+                        .append($('<td>').append(client.amount))
+                        .append($('<td>').append(client.date))
+                        .append($('<td>').append(updateButton).append(removeButton))
+                })
+
+                $('#clientRows').html(rows)
+            }
+
+            const loadClient = client => {
+                $('[name=id]').val(client._id)
+                $('[name=name]').val(client.name)
+                $('[name=amount]').val(client.amount)
+                $('[name=date]').val(client.date)
+            }
+
+            const removeClient = client => {
+                $.ajax({
+                    method: 'DELETE',
+                    url: `${API}/clients/${client._id}`,
+                    success: getClients
+                })
+            }
+
+            const getClients = () => {
+                $.ajax({
+                    url: `${API}/clients`,
+                    success: clients => {
+                        renderRows(clients)
+                        $('[name]').val('')
+                        $('[amount]').val('')
+                        $('[date]').val('')
+                    }
+                })
+            }
+
+            const searchClient = client => {
+                $.ajax({
+                    url: `${API}/clients/`,
+                    success: getClients
+                })
+            }
+
+            const saveClient = () => {
+                const _id = $('[name=id]').val()
+                const name = $('[name=name]').val()
+                const amount = $('[name=amount]').val()
+                const date = $('[name=date]').val()
+                $.ajax({
+                    method: _id ? 'PUT' : 'POST',
+                    url: `${API}/clients/${_id}`,
+                    data: _id ? { _id, name, amount, date } : { name, amount, date },
+                    success: getClients
+                })
+            }
+
+            $(() => {
+                getClients()
+                $('[save]').click(saveClient)
+            })
+
+            $(() => {
+                getClients()
+                $('[search]').click(searchClient)
+            })
+        </script>
+    </body>
+</html>
